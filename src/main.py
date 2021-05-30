@@ -188,8 +188,7 @@ def _parse_python(fp):
 
 
 def visualize(fp):
-	o=[]
-	o.append({"t":TYPE_ROOT,"v":fp.replace("\\","/").rstrip("/")+"/"})
+	o=[{"t":TYPE_ROOT,"v":fp.replace("\\","/").rstrip("/")+"/"}]
 	gdt=[[]]
 	for r,dl,fl in os.walk(fp):
 		r=r.replace("\\","/").rstrip("/")+"/"
