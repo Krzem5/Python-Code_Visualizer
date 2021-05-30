@@ -1,15 +1,15 @@
 import os
 import re
+import os.path
 
 
 
 GITIGNORE_FILE_PATH_REGEX=re.compile(r"[\\/]([!# ])")
 GITIGNORE_SPECIAL_SET_CHARCTERS_REGEX=re.compile(r"([&~|])")
-PYTHON_TOKEN_REGEX={"ignore":re.compile(br"\s*(?:\\\r?\n\s*)*(?:#[^\r\n]*)?"),"keyword":re.compile(br"(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b"),"identifier":re.compile(br"[a-zA-Z_][a-zA-Z_0-9]*"),"operator":re.compile(br"\~|\}|\|=|\||\{|\^=|\^|\]|\[|@=|@|>>=|>>|>=|>|==|=|<=|<<=|<<|<|;|:=|:|/=|//=|//|/|\.\.\.|\.|\->|\-=|\-|,|\+=|\+|\*=|\*\*=|\*\*|\*|\)|\(|\&=|\&|%=|%|!="),"integer":re.compile(br"(0[xX](?:_?[0-9a-fA-F])+|0[bB](?:_?[01])+|0[oO](?:_?[0-7])+|(?:0(?:_?0)*|[1-9](?:_?[0-9])*))"),"float":re.compile(br"(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)"),"complex":re.compile(br"([0-9](?:_?[0-9])*[jJ]|(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)[jJ])"),"string":re.compile(br"""(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'''[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)\"\"\"[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*\"\"\"|((|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'[^\n'\\]*(?:\\.[^\n'\\]*)*('|\\\r?\n)|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)"[^\n"\\]*(?:\\.[^\n"\\]*)*("|\\\r?\n))"""),"bracket":re.compile(br"\(|\[|\{|\)|\]|\}")}
-TYPE_ROOT=0
-TYPE_DIR=1
-TYPE_FILE=2
-TYPE_FUNCTION=3
+PYTHON_TOKEN_REGEX={"ignore":re.compile(br"\s*(?:\\\r?\n\s*)*(?:#[^\r\n]*)?"),"keyword":re.compile(br"(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b"),"identifier":re.compile(br"[a-zA-Z_][a-zA-Z_0-9]*(\s*\.\s*[a-zA-Z_][a-zA-Z_0-9]*)*"),"operator":re.compile(br"\~|\}|\|=|\||\{|\^=|\^|\]|\[|@=|@|>>=|>>|>=|>|==|=|<=|<<=|<<|<|;|:=|:|/=|//=|//|/|\.\.\.|\.|\->|\-=|\-|,|\+=|\+|\*=|\*\*=|\*\*|\*|\)|\(|\&=|\&|%=|%|!="),"integer":re.compile(br"(0[xX](?:_?[0-9a-fA-F])+|0[bB](?:_?[01])+|0[oO](?:_?[0-7])+|(?:0(?:_?0)*|[1-9](?:_?[0-9])*))"),"float":re.compile(br"(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)"),"complex":re.compile(br"([0-9](?:_?[0-9])*[jJ]|(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)[jJ])"),"string":re.compile(br"""(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'''[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)\"\"\"[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*\"\"\"|((|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'[^\n'\\]*(?:\\.[^\n'\\]*)*('|\\\r?\n)|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)"[^\n"\\]*(?:\\.[^\n"\\]*)*("|\\\r?\n))"""),"bracket":re.compile(br"\(|\[|\{|\)|\]|\}")}
+TYPE_DIR=0
+TYPE_FILE=1
+TYPE_FUNCTION=2
 
 
 
@@ -120,7 +120,7 @@ def _match_gitignore_path(gdt,fp):
 
 
 
-def _parse_python(fp):
+def _parse_python(fp,o):
 	tl=[]
 	with open(fp,"rb") as f:
 		dt=f.read()
@@ -136,8 +136,7 @@ def _parse_python(fp):
 					break
 			if (not ok):
 				return []
-	sc=[(fp,0,0)]
-	o=[]
+	sc=[(0,o)]
 	i=0
 	off=0
 	ln=1
@@ -168,64 +167,78 @@ def _parse_python(fp):
 				if (len(v)>1):
 					bf=v[-1]
 				i+=1
-			sc.append((nm,len(bf),len(o)))
-			o.append({"t":TYPE_FUNCTION,"v":":".join([e[0] for e in sc]),"sln":sln,"soff":soff,"eln":0,"eoff":0})
+			sc.append((len(bf),{"t":TYPE_FUNCTION,"v":nm,"c":[],"l":[],"sln":sln,"soff":soff,"eln":0,"eoff":0}))
+			sc[-2][1]["c"].append(sc[-1][1])
+		elif (tl[i][0]=="keyword" and tl[i][1] in [b"import",b"from"]):
+			sln=ln
+			soff=off-len(tl[i][1])
+			i+=1
+			while (tl[i][0]=="ignore"):
+				off+=len(tl[i][1])
+				ln+=tl[i][1].count(b"\n")
+				i+=1
+			if (tl[i][0]!="operator" or tl[i][1]!=b"*"):
+				if (tl[i][0]!="identifier"):
+					raise RuntimeError
+				sc[-1][1]["l"].append(str(tl[i][1],"utf-8"))
 		elif (tl[i][0]=="ignore"):
 			v=tl[i][1].replace(b"\r\n",b"\n").split(b"\n")
 			if (len(v)>1):
 				bf=v[-1]
-				while (sc[-1][1]>len(bf)):
-					o[sc[-1][2]]["eln"]=ln
-					o[sc[-1][2]]["eoff"]=off
+				while (len(sc)>0 and sc[-1][0]>len(bf)):
+					sc[-1][1]["eln"]=ln
+					sc[-1][1]["eoff"]=off
 					sc.pop()
 			off+=len(tl[i][1])
 			ln+=len(v)-1
 		else:
 			ln+=tl[i][1].count(b"\n")
 		i+=1
+
+
+
+def _parse_dir(fp,gdt):
+	fp=fp.replace("\\","/").rstrip("/")+"/"
+	o={"t":TYPE_DIR,"v":fp.split("/")[-2],"c":[]}
+	gdt.append(gdt[-1])
+	if (os.path.exists(fp+".gitignore")):
+		with open(fp+".gitignore","r") as f:
+			for ln in f.read().replace("\r\n","\n").split("\n"):
+				if (ln.endswith("\n")):
+					ln=ln[:-1]
+				ln=ln.lstrip()
+				if (not ln.startswith("#")):
+					iv=False
+					if (ln.startswith("!")):
+						ln=ln[1:]
+						iv=True
+					while (ln.endswith(" ") and ln[-2:]!="\\ " and ln[-2:]!="/ "):
+						ln=ln[:-1]
+					ln=GITIGNORE_FILE_PATH_REGEX.sub(r"\1",ln)
+					if (len(ln)>0):
+						if ("**/" in ln):
+							gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.replace("**/","").split("/"))])
+						gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.split("/"))])
+	for k in os.listdir(fp):
+		if (os.path.isdir(fp+k)):
+			if (_match_gitignore_path(gdt[-1],fp+k)==False):
+				o["c"].append(_parse_dir(fp+k,gdt))
+		else:
+			if (_match_gitignore_path(gdt[-1],fp+k)==False):
+				e=k[len(k.split(".")[0]):]
+				if (e==".py"):
+					o["c"].append({"t":TYPE_FILE,"v":k,"c":[],"l":[]})
+					_parse_python(fp+k,o["c"][-1])
+	gdt.pop()
 	return o
 
 
 
 def visualize(fp):
-	o=[{"t":TYPE_ROOT,"v":fp.replace("\\","/").rstrip("/")+"/"}]
-	gdt=[[]]
-	for r,dl,fl in os.walk(fp):
-		r=r.replace("\\","/").rstrip("/")+"/"
-		if (".gitignore" in fl):
-			with open(r+".gitignore","r") as f:
-				gdt.append(gdt[-1])
-				for ln in f.read().replace("\r\n","\n").split("\n"):
-					if (ln.endswith("\n")):
-						ln=ln[:-1]
-					ln=ln.lstrip()
-					if (not ln.startswith("#")):
-						iv=False
-						if (ln.startswith("!")):
-							ln=ln[1:]
-							iv=True
-						while (ln.endswith(" ") and ln[-2:]!="\\ " and ln[-2:]!="/ "):
-							ln=ln[:-1]
-						ln=GITIGNORE_FILE_PATH_REGEX.sub(r"\1",ln)
-						if (len(ln)>0):
-							if ("**/" in ln):
-								gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.replace("**/","").split("/"))])
-							gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.split("/"))])
-		else:
-			gdt.append(gdt[-1])
-		for d in dl:
-			if (_match_gitignore_path(gdt[-1],r+d)==False):
-				o.append({"t":TYPE_DIR,"v":r+d})
-		for f in fl:
-			if (_match_gitignore_path(gdt[-1],r+f)==False):
-				e=f[len(f.split(".")[0]):]
-				if (e==".py"):
-					o.append({"t":TYPE_FILE,"v":r+f})
-					o.extend(_parse_python(r+f))
-		gdt.pop()
-	return o
+	return _parse_dir(fp,[[]])
 
 
 
 __file__=os.path.abspath(__file__).replace("\\","/")
 print(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/"))
+print(visualize("D:/K"))
