@@ -241,4 +241,3 @@ def visualize(fp):
 
 __file__=os.path.abspath(__file__).replace("\\","/")
 print(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/"))
-print(visualize("D:/K"))
