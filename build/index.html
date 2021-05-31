@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Code Visualizer</title>
+		<meta charset="utf-8">
+		<script type="text/javascript">
+			document.addEventListener("DOMContentLoaded",()=>{
+				let COLOR_LIST=[["#347fca","#5c98d5"],["#7333C6","#8e58d4"],["#33c64e","#5cd572"]];
+				let RING_WIDTH=40;
+				let SEGMENT_SIZE_MODE=1;
+				let W=1000;
+				let H=1000;
+				let wr=document.querySelector(".main");
+				function _add_circle(w,h,sz,s,e,cl){
+					if (e-Math.PI*2==s){
+						wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2},${h/2-sz}a${sz},${sz},0,1,0,1,0Zm0,${RING_WIDTH}a${sz-RING_WIDTH},${sz-RING_WIDTH},0,1,1,-1,0Z"></path>`;
+						return;
+					}
+					wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke-linecap="square" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)} l${-RING_WIDTH*Math.cos(s)},${-RING_WIDTH*Math.sin(s)}A${sz-RING_WIDTH},${sz-RING_WIDTH},0,${(e-s<=Math.PI?0:1)},1,${w/2+(sz-RING_WIDTH)*Math.cos(e)},${h/2+(sz-RING_WIDTH)*Math.sin(e)}l${RING_WIDTH*Math.cos(e)},${RING_WIDTH*Math.sin(e)}A${sz},${sz},0,${(e-s<=Math.PI?0:1)},0,${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)}"></path>`;
+				}
+				function _max_depth(dt){
+					return Math.max(0,...dt.c.map((e)=>_max_depth(e)))+1;
+				}
+				function _write_data(dt,d,s,e){
+					_add_circle(W,H,d*RING_WIDTH,s,e,dt.t);
+					if (SEGMENT_SIZE_MODE){
+						let c=(e-s)/dt.sz;
+						dt.c.reduce((i,e)=>{
+							if (e.sz){
+								_write_data(e,d-1,s+c*i,s+c*(i+e.sz));
+							}
+							return i+e.sz;
+						},0);
+					}
+					else{
+						let c=(e-s)/(dt.c.length+1);
+						dt.c.forEach((e,i)=>_write_data(e,d-1,s+c*i,s+c*(i+1)));
+					}
+				}
+				console.log(_max_depth(window.DATA));
+				_write_data(window.DATA,Math.floor(W/2/RING_WIDTH),0,Math.PI*2);
+			},true);
+			window.DATA={"t":0,"v":"python-code_visualizer","c":[{"t":1,"v":".gitignore","c":[],"l":[],"fl":[],"sz":13},{"t":1,"v":".lgtm.yml","c":[],"l":[],"fl":[],"sz":165},{"t":0,"v":"build","c":[{"t":1,"v":"index.html","c":[],"l":[],"fl":[],"sz":0}],"sz":0},{"t":1,"v":"build.bat","c":[],"l":[],"fl":[],"sz":36},{"t":1,"v":"LICENSE.txt","c":[],"l":[],"fl":[],"sz":1071},{"t":1,"v":"README.md","c":[],"l":[],"fl":[],"sz":28},{"t":0,"v":"src","c":[{"t":1,"v":"main.py","c":[{"t":2,"v":"_create_gitignore_pattern","c":[],"l":[],"fl":[["p.replace",17,443],["lower",17,462],["len",20,501],["len",24,562],["ol.append",25,610],["ol.append",27,655],["len",30,708],["len",32,757],["len",34,808],["len",36,857],["ol.append",37,875],["find",44,1055],["cl.append",47,1128],["cl.append",50,1191],["join",51,1223],["e.replace",51,1228],["replace",51,1250],["l.replace",53,1313],["GITIGNORE_SPECIAL_SET_CHARCTERS_REGEX.sub",54,1347],["ol.append",57,1447],["ol.append",59,1512],["ol.append",61,1555],["ol.append",63,1590],["re.escape",63,1599],["len",66,1642],["len",70,1719],["len",72,1750],["len",76,1812],["len",79,1884],["re.compile",84,1949]],"sln":16,"soff":435,"eln":84,"sz":1539},{"t":2,"v":"_match_gitignore_path","c":[],"l":[],"fl":[["fp.lower",89,1990],["replace",89,2000],["lower",89,2017],["split",89,2024],["len",93,2118],["len",93,2125],["len",95,2169],["zip",97,2234],["r.match",98,2264],["range",105,2434],["len",105,2441],["len",105,2448],["zip",106,2486],["r.match",107,2521]],"sln":88,"soff":1982,"eln":119,"sz":828},{"t":2,"v":"_parse_python","c":[],"l":[],"fl":[["open",125,2840],["f.read",126,2868],["len",128,2902],["PYTHON_TOKEN_REGEX.items",130,2946],["v.match",131,2985],["m.end",132,3034],["tl.append",133,3060],["m.group",133,3071],["m.end",135,3117],["len",144,3253],["len",145,3271],["len",148,3361],["len",151,3434],["count",152,3465],["str",156,3560],["len",159,3683],["count",160,3716],["replace",164,3802],["split",164,3814],["len",165,3836],["len",166,3860],["len",167,3883],["sc.append",170,3935],["len",170,3945],["append",171,4058],["len",174,4155],["len",177,4228],["count",178,4259],["append",183,4421],["str",183,4427],["replace",185,4497],["split",185,4509],["len",186,4531],["len",188,4577],["len",188,4600],["sc.pop",192,4737],["len",193,4757],["len",194,4779],["len",197,4846],["len",200,4905],["len",201,4950],["count",202,4981],["len",204,5018],["append",205,5093],["str",205,5100],["count",207,5154]],"sln":123,"soff":2818,"eln":208,"sz":2361},{"t":2,"v":"_parse_dir","c":[],"l":[],"fl":[["fp.replace",213,5195],["rstrip",213,5215],["fp.split",214,5253],["gdt.append",215,5290],["os.path.exists",216,5318],["open",217,5363],["f.read",218,5413],["replace",218,5421],["split",218,5441],["ln.endswith",219,5469],["ln.lstrip",221,5523],["ln.startswith",222,5555],["ln.startswith",224,5614],["ln.endswith",227,5700],["GITIGNORE_FILE_PATH_REGEX.sub",229,5796],["len",230,5848],["append",232,5917],["tuple",232,5926],["_create_gitignore_pattern",232,5931],["ln.replace",232,5968],["split",232,5988],["append",233,6023],["tuple",233,6032],["_create_gitignore_pattern",233,6037],["ln.split",233,6074],["os.listdir",235,6116],["os.path.isdir",236,6144],["_match_gitignore_path",237,6179],["append",238,6239],["_parse_dir",238,6245],["_match_gitignore_path",241,6331],["len",242,6387],["k.split",242,6390],["append",243,6427],["_parse_python",245,6525],["os.stat",246,6581],["gdt.pop",250,6676],["visualize",255,6709],["_parse_dir",256,6733],["open",257,6762],["rf.read",258,6799],["replace",258,6808],["bytes",258,6817],["__import__",258,6822],["dumps",258,6840]],"sln":212,"soff":5187,"eln":258,"sz":1698}],"l":["os","re","os.path"],"fl":[["re.compile",7,70],["re.compile",8,123],["re.compile",9,167],["re.compile",9,191],["re.compile",9,218],["re.compile",9,243],["re.compile",9,267],["re.compile",9,289],["re.compile",9,313],["re.compile",9,336],["re.compile",9,360],["os.path.exists",262,6898],["os.walk",264,6952],["r.replace",265,6977],["strip",265,6996],["dl.insert",267,7039],["os.remove",269,7081],["os.rmdir",271,7117],["os.mkdir",273,7141],["os.path.abspath",274,7169],["replace",274,7193],["open",275,7219],["f.write",276,7260],["visualize",276,7267],["len",276,7286],["__file__.split",276,7289],["rstrip",276,7316]],"sz":8191},{"t":0,"v":"web","c":[{"t":1,"v":"index.html","c":[],"l":[],"fl":[],"sz":2361}],"sz":2361}],"sz":10552}],"sz":11865};
+		</script>
+		<style type="text/css">
+			body{
+				background-color: #101010;
+				background-image: radial-gradient(#5c5c5c 3%,transparent 3%);
+				background-size: 50px 50px;
+			}
+			.main{
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+				width: 1000px;
+				height: 1000px;
+			}
+		</style>
+	</head>
+	<body>
+		<svg class="main" version="1.1">
+		</svg>
+	</body>
+</html>

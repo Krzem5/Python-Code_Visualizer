@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Code Visualizer</title>
+		<meta charset="utf-8">
+		<script type="text/javascript">
+			document.addEventListener("DOMContentLoaded",()=>{
+				let COLOR_LIST=[["#347fca","#5c98d5"],["#7333C6","#8e58d4"],["#33c64e","#5cd572"]];
+				let RING_WIDTH=40;
+				let SEGMENT_SIZE_MODE=1;
+				let W=1000;
+				let H=1000;
+				let wr=document.querySelector(".main");
+				function _add_circle(w,h,sz,s,e,cl){
+					if (e-Math.PI*2==s){
+						wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2},${h/2-sz}a${sz},${sz},0,1,0,1,0Zm0,${RING_WIDTH}a${sz-RING_WIDTH},${sz-RING_WIDTH},0,1,1,-1,0Z"></path>`;
+						return;
+					}
+					wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke-linecap="square" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)} l${-RING_WIDTH*Math.cos(s)},${-RING_WIDTH*Math.sin(s)}A${sz-RING_WIDTH},${sz-RING_WIDTH},0,${(e-s<=Math.PI?0:1)},1,${w/2+(sz-RING_WIDTH)*Math.cos(e)},${h/2+(sz-RING_WIDTH)*Math.sin(e)}l${RING_WIDTH*Math.cos(e)},${RING_WIDTH*Math.sin(e)}A${sz},${sz},0,${(e-s<=Math.PI?0:1)},0,${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)}"></path>`;
+				}
+				function _max_depth(dt){
+					return Math.max(0,...dt.c.map((e)=>_max_depth(e)))+1;
+				}
+				function _write_data(dt,d,s,e){
+					_add_circle(W,H,d*RING_WIDTH,s,e,dt.t);
+					if (SEGMENT_SIZE_MODE){
+						let c=(e-s)/dt.sz;
+						dt.c.reduce((i,e)=>{
+							if (e.sz){
+								_write_data(e,d-1,s+c*i,s+c*(i+e.sz));
+							}
+							return i+e.sz;
+						},0);
+					}
+					else{
+						let c=(e-s)/(dt.c.length+1);
+						dt.c.forEach((e,i)=>_write_data(e,d-1,s+c*i,s+c*(i+1)));
+					}
+				}
+				console.log(_max_depth(window.DATA));
+				_write_data(window.DATA,Math.floor(W/2/RING_WIDTH),0,Math.PI*2);
+			},true);
+			window.DATA=$$$DATA$$$;
+		</script>
+		<style type="text/css">
+			body{
+				background-color: #101010;
+				background-image: radial-gradient(#5c5c5c 3%,transparent 3%);
+				background-size: 50px 50px;
+			}
+			.main{
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+				width: 1000px;
+				height: 1000px;
+			}
+		</style>
+	</head>
+	<body>
+		<svg class="main" version="1.1">
+		</svg>
+	</body>
+</html>

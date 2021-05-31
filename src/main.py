@@ -167,7 +167,7 @@ def _parse_python(fp,o):
 				if (len(v)>1):
 					bf=v[-1]
 				i+=1
-			sc.append((len(bf),{"t":TYPE_FUNCTION,"v":nm,"c":[],"l":[],"sln":sln,"soff":soff,"eln":0,"eoff":0}))
+			sc.append((len(bf),{"t":TYPE_FUNCTION,"v":nm,"c":[],"l":[],"fl":[],"sln":sln,"soff":soff,"eln":0,"sz":0}))
 			sc[-2][1]["c"].append(sc[-1][1])
 		elif (tl[i][0]=="keyword" and tl[i][1] in [b"import",b"from"]):
 			sln=ln
@@ -187,10 +187,22 @@ def _parse_python(fp,o):
 				bf=v[-1]
 				while (len(sc)>0 and sc[-1][0]>len(bf)):
 					sc[-1][1]["eln"]=ln
-					sc[-1][1]["eoff"]=off
+					sc[-1][1]["sz"]=off-sc[-1][1]["soff"]
+					sc[-2][1]["sz"]+=sc[-1][1]["sz"]
 					sc.pop()
 			off+=len(tl[i][1])
 			ln+=len(v)-1
+		elif (tl[i][0]=="identifier"):
+			sln=ln
+			soff=off-len(tl[i][1])
+			nm=tl[i][1]
+			i+=1
+			while (i<len(tl) and tl[i][0]=="ignore"):
+				off+=len(tl[i][1])
+				ln+=tl[i][1].count(b"\n")
+				i+=1
+			if (i<len(tl) and tl[i][0]=="operator" and tl[i][1]==b"("):
+				sc[-1][1]["fl"].append((str(nm,"utf-8"),sln,soff))
 		else:
 			ln+=tl[i][1].count(b"\n")
 		i+=1
@@ -199,7 +211,7 @@ def _parse_python(fp,o):
 
 def _parse_dir(fp,gdt):
 	fp=fp.replace("\\","/").rstrip("/")+"/"
-	o={"t":TYPE_DIR,"v":fp.split("/")[-2],"c":[]}
+	o={"t":TYPE_DIR,"v":fp.split("/")[-2],"c":[],"sz":0}
 	gdt.append(gdt[-1])
 	if (os.path.exists(fp+".gitignore")):
 		with open(fp+".gitignore","r") as f:
@@ -219,25 +231,46 @@ def _parse_dir(fp,gdt):
 						if ("**/" in ln):
 							gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.replace("**/","").split("/"))])
 						gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.split("/"))])
-	for k in os.listdir(fp):
-		if (os.path.isdir(fp+k)):
-			if (_match_gitignore_path(gdt[-1],fp+k)==False):
-				o["c"].append(_parse_dir(fp+k,gdt))
-		else:
-			if (_match_gitignore_path(gdt[-1],fp+k)==False):
-				e=k[len(k.split(".")[0]):]
-				if (e==".py"):
-					o["c"].append({"t":TYPE_FILE,"v":k,"c":[],"l":[]})
-					_parse_python(fp+k,o["c"][-1])
+	try:
+		for k in os.listdir(fp):
+			if (os.path.isdir(fp+k)):
+				if (_match_gitignore_path(gdt[-1],fp+k)==False):
+					o["c"].append(_parse_dir(fp+k,gdt))
+					o["sz"]+=o["c"][-1]["sz"]
+			else:
+				if (_match_gitignore_path(gdt[-1],fp+k)==False):
+					e=k[len(k.split(".")[0]):]
+					o["c"].append({"t":TYPE_FILE,"v":k,"c":[],"l":[],"fl":[],"sz":0})
+					if (e==".py"):
+						_parse_python(fp+k,o["c"][-1])
+					o["c"][-1]["sz"]=os.stat(fp+k).st_size
+					o["sz"]+=o["c"][-1]["sz"]
+	except PermissionError:
+		pass
 	gdt.pop()
 	return o
 
 
 
-def visualize(fp):
-	return _parse_dir(fp,[[]])
+def visualize(fp,s_fp):
+	dt=_parse_dir(fp,[[]])
+	with open(s_fp,"rb") as rf:
+		return rf.read().replace(b"$$$DATA$$$",bytes(__import__("json").dumps(dt,separators=(",",":")),"utf-8"))
 
 
 
+if (os.path.exists("build")):
+	dl=[]
+	for r,ndl,fl in os.walk("build"):
+		r=r.replace("\\","/").strip("/")+"/"
+		for d in ndl:
+			dl.insert(0,r+d)
+		for f in fl:
+			os.remove(r+f)
+	for k in dl:
+		os.rmdir(k)
+else:
+	os.mkdir("build")
 __file__=os.path.abspath(__file__).replace("\\","/")
-print(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/"))
+with open("build/index.html","wb") as f:
+	f.write(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/","src/web/index.html"))
