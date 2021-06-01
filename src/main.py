@@ -320,5 +320,4 @@ else:
 	os.mkdir("build")
 __file__=os.path.abspath(__file__).replace("\\","/")
 with open("build/index.html","wb") as f:
-	f.write(visualize("D:/K/Coding/Assembly-64bit_uefi_kernel","src/web/index.html"))
-	# f.write(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/","src/web/index.html"))
+	f.write(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/","src/web/index.html"))
