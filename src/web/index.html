@@ -5,61 +5,171 @@
 		<meta charset="utf-8">
 		<script type="text/javascript">
 			document.addEventListener("DOMContentLoaded",()=>{
-				let COLOR_LIST=[["#347fca","#5c98d5"],["#7333C6","#8e58d4"],["#33c64e","#5cd572"]];
 				let RING_WIDTH=40;
-				let SEGMENT_SIZE_MODE=1;
-				let W=1000;
-				let H=1000;
 				let wr=document.querySelector(".main");
-				function _add_circle(w,h,sz,s,e,cl){
+				let g=document.querySelector(".graph");
+				let x=wr.getBoundingClientRect().width/2;
+				let y=wr.getBoundingClientRect().height;
+				let off=0;
+				let off_v=0;
+				let kd=0;
+				let st=0;
+				function _add_circle(x,y,sz,s,e,cl,nm){
 					if (e-Math.PI*2==s){
-						wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2},${h/2-sz}a${sz},${sz},0,1,0,1,0Zm0,${RING_WIDTH}a${sz-RING_WIDTH},${sz-RING_WIDTH},0,1,1,-1,0Z"></path>`;
+						g.innerHTML+=`<path id="txt-path-${g.i}" fill="none" stroke="none" d="M${x},${y-sz+RING_WIDTH/2}a${sz-RING_WIDTH/2},${sz-RING_WIDTH/2},0,1,0,1,0"></path><path class="cl${cl}" stroke="#282828" stroke-width="2" d="M${x},${y-sz}a${sz},${sz},0,1,0,1,0Zm0,${RING_WIDTH}a${sz-RING_WIDTH},${sz-RING_WIDTH},0,1,1,-1,0Z"></path><text dy="4" class="txt cl${cl}-txt"><textPath startOffset="50%" anchor="middle" href="#txt-path-${g.i}">${nm}</textPath></text>`;
+						g.i++;
 						return;
 					}
-					wr.innerHTML+=`<path class="circle" fill="${COLOR_LIST[cl][0]}" stroke-linecap="square" stroke="${COLOR_LIST[cl][1]}" stroke-width="3" d="M${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)} l${-RING_WIDTH*Math.cos(s)},${-RING_WIDTH*Math.sin(s)}A${sz-RING_WIDTH},${sz-RING_WIDTH},0,${(e-s<=Math.PI?0:1)},1,${w/2+(sz-RING_WIDTH)*Math.cos(e)},${h/2+(sz-RING_WIDTH)*Math.sin(e)}l${RING_WIDTH*Math.cos(e)},${RING_WIDTH*Math.sin(e)}A${sz},${sz},0,${(e-s<=Math.PI?0:1)},0,${w/2+sz*Math.cos(s)},${h/2+sz*Math.sin(s)}"></path>`;
-				}
-				function _max_depth(dt){
-					return Math.max(0,...dt.c.map((e)=>_max_depth(e)))+1;
+					g.innerHTML+=`<path id="txt-path-${g.i}" fill="none" stroke="none" d="M${x+(sz-RING_WIDTH/2)*Math.cos(s)},${y+(sz-RING_WIDTH/2)*Math.sin(s)}A${sz-RING_WIDTH/2},${sz-RING_WIDTH/2},0,${(e-s<=Math.PI?0:1)},1,${x+(sz-RING_WIDTH/2)*Math.cos(e)},${y+(sz-RING_WIDTH/2)*Math.sin(e)}"></path><path class="cl${cl}" stroke-linecap="square" stroke="#282828" stroke-width="2" d="M${x+sz*Math.cos(s)},${y+sz*Math.sin(s)}l${-RING_WIDTH*Math.cos(s)},${-RING_WIDTH*Math.sin(s)}A${sz-RING_WIDTH},${sz-RING_WIDTH},0,${(e-s<=Math.PI?0:1)},1,${x+(sz-RING_WIDTH)*Math.cos(e)},${y+(sz-RING_WIDTH)*Math.sin(e)}l${RING_WIDTH*Math.cos(e)},${RING_WIDTH*Math.sin(e)}A${sz},${sz},0,${(e-s<=Math.PI?0:1)},0,${x+sz*Math.cos(s)},${y+sz*Math.sin(s)}"></path><text dy="4" class="txt cl${cl}-txt"><textPath startOffset="50%" anchor="middle" href="#txt-path-${g.i}">${nm}</textPath></text>`;
+					g.i++;
 				}
 				function _write_data(dt,d,s,e){
-					_add_circle(W,H,d*RING_WIDTH,s,e,dt.t);
-					if (SEGMENT_SIZE_MODE){
-						let c=(e-s)/dt.sz;
-						dt.c.reduce((i,e)=>{
-							if (e.sz){
-								_write_data(e,d-1,s+c*i,s+c*(i+e.sz));
-							}
-							return i+e.sz;
-						},0);
-					}
-					else{
-						let c=(e-s)/(dt.c.length+1);
-						dt.c.forEach((e,i)=>_write_data(e,d-1,s+c*i,s+c*(i+1)));
-					}
+					_add_circle(x,y,d*RING_WIDTH,s,e,dt.t,dt.v);
+					let c=(e-s)/dt.sz;
+					dt.c.reduce((i,e)=>{
+						if (e.sz){
+							_write_data(e,d-1,s+c*i,s+c*(i+e.sz));
+						}
+						return i+e.sz;
+					},0);
 				}
-				console.log(_max_depth(window.DATA));
-				_write_data(window.DATA,Math.floor(W/2/RING_WIDTH),0,Math.PI*2);
+				function _redraw(){
+					x=wr.getBoundingClientRect().width/2;
+					y=wr.getBoundingClientRect().height*(st?0.5:1);
+					let sz=Math.floor(Math.min(x,y)/RING_WIDTH);
+					g.style.width=`${sz*RING_WIDTH}px`;
+					g.style.height=`${sz*RING_WIDTH}px`;
+					g.i=0;
+					g.innerHTML="";
+					_write_data(window.DATA,sz,0,Math.PI*2);
+				}
+				function _update(){
+					off+=off_v;
+					if (kd&1){
+						off_v-=0.1;
+					}
+					if (kd&2){
+						off_v+=0.1;
+					}
+					if (!(kd&3)){
+						if (off_v!=0){
+							off_v*=0.95;
+						}
+					}
+					if (off_v<-4.5){
+						off_v=-4.5;
+					}
+					if (off_v>4.5){
+						off_v=4.5;
+					}
+					if ((kd&12)==4){
+						kd|=8;
+						st=!st;
+						_redraw();
+					}
+					if (off_v!=0){
+						if (st){
+							g.style.transform=`translate(50%,50%) rotate(${off}deg) translate(-50%,-50%)`;
+						}
+						else{
+							g.style.transform=`translate(50%,100%) rotate(${off}deg) translate(-50%,-100%)`;
+						}
+					}
+					requestAnimationFrame(_update);
+				}
+				window.addEventListener("resize",_redraw,true);
+				document.addEventListener("keydown",(e)=>{
+					if (e.keyCode==81){
+						kd|=1;
+					}
+					else if (e.keyCode==69){
+						kd|=2;
+					}
+					else if (e.keyCode==84){
+						kd|=4;
+					}
+				},true);
+				document.addEventListener("keyup",(e)=>{
+					if (e.keyCode==81){
+						kd&=~1;
+					}
+					else if (e.keyCode==69){
+						kd&=~2;
+					}
+					else if (e.keyCode==84){
+						kd&=~12;
+					}
+				},true);
+				_redraw();
+				_update();
 			},true);
 			window.DATA=$$$DATA$$$;
 		</script>
 		<style type="text/css">
 			body{
-				background-color: #101010;
+				background-color: #121212;
 				background-image: radial-gradient(#5c5c5c 3%,transparent 3%);
 				background-size: 50px 50px;
 			}
 			.main{
 				position: absolute;
-				top: 50%;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+			}
+			.graph{
+				position: absolute;
+				top: 100%;
 				left: 50%;
-				transform: translate(-50%,-50%);
-				width: 1000px;
-				height: 1000px;
+			}
+			.txt{
+				pointer-events: none;
+				text-anchor:middle;
+				font-family: monospace;
+				line-height: 40px;
+				user-select: none;
+				font-size: 18px;
+			}
+			.cl0{
+				fill: #6200ea;
+				transition: fill 0.1s;
+			}
+			.cl1{
+				fill: #304ffe;
+				transition: fill 0.1s;
+			}
+			.cl2{
+				fill: #00c853;
+				transition: fill 0.1s;
+			}
+			.cl0:hover{
+				fill: #7c4dff;
+				transition: fill 0.3s;
+			}
+			.cl1:hover{
+				fill: #536dfe;
+				transition: fill 0.3s;
+			}
+			.cl2:hover{
+				fill: #69f0ae;
+				transition: fill 0.3s;
+			}
+			.cl0-txt{
+				fill: #e9e9e9;
+			}
+			.cl1-txt{
+				fill: #e9e9e9;
+			}
+			.cl2-txt{
+				fill: #161616;
 			}
 		</style>
 	</head>
 	<body>
 		<svg class="main" version="1.1">
+			<g class="graph">
+			</g>
 		</svg>
 	</body>
 </html>

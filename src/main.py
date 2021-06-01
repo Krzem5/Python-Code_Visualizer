@@ -29,9 +29,9 @@ def _create_gitignore_pattern(p):
 			j=i
 			if (j<len(p) and p[j]=="!"):
 				j+=1
-			if j<len(p) and p[j]=="]":
+			if (j<len(p) and p[j]=="]"):
 				j+=1
-			while j<len(p) and p[j]!="]":
+			while (j<len(p) and p[j]!="]"):
 				j+=1
 			if (j>=len(p)):
 				ol.append(r"\\[")
@@ -180,7 +180,7 @@ def _parse_python(fp,o):
 			if (tl[i][0]!="operator" or tl[i][1]!=b"*"):
 				if (tl[i][0]!="identifier"):
 					raise RuntimeError
-				sc[-1][1]["l"].append(str(tl[i][1],"utf-8"))
+				sc[-1][1]["l"].append(fp[:-len(fp.split("/")[-1])]+str(tl[i][1],"utf-8")+".py")
 		elif (tl[i][0]=="ignore"):
 			v=tl[i][1].replace(b"\r\n",b"\n").split(b"\n")
 			if (len(v)>1):
@@ -233,7 +233,7 @@ def _parse_dir(fp,gdt):
 						gdt[-1].append([iv,tuple(_create_gitignore_pattern(e) for e in ln.split("/"))])
 	try:
 		for k in os.listdir(fp):
-			if (os.path.isdir(fp+k)):
+			if (os.path.isdir(fp+k) and (k!="docs" or len(gdt)<2)):
 				if (_match_gitignore_path(gdt[-1],fp+k)==False):
 					o["c"].append(_parse_dir(fp+k,gdt))
 					o["sz"]+=o["c"][-1]["sz"]
@@ -252,8 +252,55 @@ def _parse_dir(fp,gdt):
 
 
 
+def _find_file(fp,dt):
+	if (fp==dt["v"].lower()):
+		return dt
+	if (fp.startswith(dt["v"].lower())):
+		fp=fp[len(dt["v"]):].lstrip("/")
+		for k in dt["c"]:
+			if (k["t"]!=TYPE_FUNCTION):
+				f=_find_file(fp,k)
+				if (f is not None):
+					return f
+	return None
+
+
+
+def _generate_func_list(pfx,l,o):
+	for k in l:
+		v=pfx+k["v"]
+		if (v not in o):
+			o.append(v)
+		_generate_func_list(pfx+k["v"]+".",k["c"],o)
+
+
+
+def _expand_calls(dt,r,f_dt,b_fp):
+	if (dt["t"]==TYPE_FILE or dt["t"]==TYPE_FUNCTION):
+		ml=[]
+		for k in dt["l"]:
+			f=_find_file(k.lower()[len(b_fp):].strip("/"),r)
+			if (f is None):
+				continue
+			_generate_func_list(k.split("/")[-1].split(".")[0]+".",f["c"],ml)
+		_generate_func_list("",f_dt["c"],ml)
+		_generate_func_list("",dt["c"],ml)
+		nfl=[]
+		for e,ln,off in dt["fl"]:
+			if (e in ml):
+				nfl.append((e,ln,off))
+		dt["fl"]=nfl
+	for k in dt["c"]:
+		if (k["t"]==TYPE_FUNCTION):
+			_expand_calls(k,r,f_dt,b_fp)
+		else:
+			_expand_calls(k,r,k,b_fp)
+
+
+
 def visualize(fp,s_fp):
 	dt=_parse_dir(fp,[[]])
+	_expand_calls(dt,dt,dt,fp[:-len(fp.split("/")[-1])])
 	with open(s_fp,"rb") as rf:
 		return rf.read().replace(b"$$$DATA$$$",bytes(__import__("json").dumps(dt,separators=(",",":")),"utf-8"))
 
@@ -273,4 +320,5 @@ else:
 	os.mkdir("build")
 __file__=os.path.abspath(__file__).replace("\\","/")
 with open("build/index.html","wb") as f:
-	f.write(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/","src/web/index.html"))
+	f.write(visualize("D:/K/Coding/Assembly-64bit_uefi_kernel","src/web/index.html"))
+	# f.write(visualize(__file__[:-len(__file__.split("/")[-1])-4].rstrip("/")+"/","src/web/index.html"))
