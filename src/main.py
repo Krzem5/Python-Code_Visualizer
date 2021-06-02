@@ -10,6 +10,7 @@ PYTHON_TOKEN_REGEX={"ignore":re.compile(br"\s*(?:\\\r?\n\s*)*(?:#[^\r\n]*)?"),"k
 TYPE_DIR=0
 TYPE_FILE=1
 TYPE_FUNCTION=2
+TYPE_CLASS=3
 
 
 
@@ -146,6 +147,7 @@ def _parse_python(fp,o):
 		if (tl[i][0]=="keyword" and tl[i][1] in [b"def",b"class"]):
 			sln=ln
 			soff=off-len(tl[i][1])
+			t=(TYPE_CLASS if tl[i][1]==b"class" else TYPE_FUNCTION)
 			i+=1
 			while (tl[i][0]=="ignore"):
 				off+=len(tl[i][1])
@@ -167,7 +169,7 @@ def _parse_python(fp,o):
 				if (len(v)>1):
 					bf=v[-1]
 				i+=1
-			sc.append((len(bf),{"t":TYPE_FUNCTION,"v":nm,"c":[],"l":[],"fl":[],"sln":sln,"soff":soff,"eln":0,"sz":0}))
+			sc.append((len(bf),{"t":t,"v":nm,"c":[],"l":[],"fl":[],"sln":sln,"soff":soff,"eln":0,"sz":0}))
 			sc[-2][1]["c"].append(sc[-1][1])
 		elif (tl[i][0]=="keyword" and tl[i][1] in [b"import",b"from"]):
 			sln=ln
@@ -266,41 +268,44 @@ def _find_file(fp,dt):
 
 
 
-def _generate_func_list(pfx,l,o):
+def _generate_func_list(pfx,f_pfx,l,o):
 	for k in l:
-		v=pfx+k["v"]
+		v=(pfx+k["v"],(f_pfx+k["v"]).lower())
 		if (v not in o):
 			o.append(v)
-		_generate_func_list(pfx+k["v"]+".",k["c"],o)
+		_generate_func_list(pfx+k["v"]+".",f_pfx+k["v"]+".",k["c"],o)
 
 
 
-def _expand_calls(dt,r,f_dt,b_fp):
+def _expand_calls(dt,r,f_dt,f_nm,b_fp):
 	if (dt["t"]==TYPE_FILE or dt["t"]==TYPE_FUNCTION):
 		ml=[]
 		for k in dt["l"]:
 			f=_find_file(k.lower()[len(b_fp):].strip("/"),r)
 			if (f is None):
 				continue
-			_generate_func_list(k.split("/")[-1].split(".")[0]+".",f["c"],ml)
-		_generate_func_list("",f_dt["c"],ml)
-		_generate_func_list("",dt["c"],ml)
+			_generate_func_list(k.split("/")[-1].split(".")[0]+".",k+":",f["c"],ml)
+		_generate_func_list("",f_nm+":",f_dt["c"],ml)
+		_generate_func_list("",f_nm+":",dt["c"],ml)
 		nfl=[]
 		for e,ln,off in dt["fl"]:
-			if (e in ml):
-				nfl.append((e,ln,off))
+			for k in ml:
+				if (e==k[0]):
+					nfl.append((k[1],ln,off))
+					break
 		dt["fl"]=nfl
 	for k in dt["c"]:
 		if (k["t"]==TYPE_FUNCTION):
-			_expand_calls(k,r,f_dt,b_fp)
+			_expand_calls(k,r,f_dt,f_nm,b_fp)
 		else:
-			_expand_calls(k,r,k,b_fp)
+			_expand_calls(k,r,k,f_nm+"/"+k["v"],b_fp)
 
 
 
 def visualize(fp,s_fp):
 	dt=_parse_dir(fp,[[]])
-	_expand_calls(dt,dt,dt,fp[:-len(fp.split("/")[-1])])
+	fp=fp.rstrip("/")
+	_expand_calls(dt,dt,dt,fp.split("/")[-1],fp[:-len(fp.split("/")[-1])].rstrip("/"))
 	with open(s_fp,"rb") as rf:
 		return rf.read().replace(b"$$$DATA$$$",bytes(__import__("json").dumps(dt,separators=(",",":")),"utf-8"))
 
