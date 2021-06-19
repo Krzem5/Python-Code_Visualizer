@@ -5,7 +5,7 @@
 		<meta charset="utf-8">
 		<script type="text/javascript">
 			document.addEventListener("DOMContentLoaded",()=>{
-				let RING_WIDTH=40;
+				const RING_WIDTH=40;
 				let wr=document.querySelector(".main");
 				let g=document.querySelector(".graph");
 				let cx=wr.getBoundingClientRect().width/2;
@@ -250,7 +250,7 @@
 				0%{
 					stroke-dashoffset: 20px;
 				}
-				100% {
+				100%{
 					stroke-dashoffset: 0;
 				}
 			}

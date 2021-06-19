@@ -6,11 +6,18 @@ import os.path
 
 GITIGNORE_FILE_PATH_REGEX=re.compile(r"[\\/]([!# ])")
 GITIGNORE_SPECIAL_SET_CHARCTERS_REGEX=re.compile(r"([&~|])")
+HTML_ATTRIBUTE_REGEX=re.compile(br'''([a-zA-Z0-9\-_]+)\s*(?:=\s*"((?:[^\"\\]|\\.)*))?"''')
+HTML_TAG_JS_ATTRIBUTES=["onabort","onafterprint","onbeforeprint","onbeforeunload","onblur","oncanplay","oncanplaythrough","onchange","onclick","oncontextmenu","oncopy","oncuechange","oncut","ondblclick","ondrag","ondragend","ondragenter","ondragleave","ondragover","ondragstart","ondrop","ondurationchange","onemptied","onended","onerror","onfocus","onhashchange","oninput","oninvalid","onkeydown","onkeypress","onkeyup","onload","onloadeddata","onloadedmetadata","onloadstart","onmousedown","onmousemove","onmouseout","onmouseover","onmouseup","onmousewheel","onoffline","ononline","onpagehide","onpageshow","onpaste","onpause","onplay","onplaying","onpopstate","onprogress","onratechange","onreset","onresize","onscroll","onsearch","onseeked","onseeking","onselect","onstalled","onstorage","onsubmit","onsuspend","ontimeupdate","ontoggle","onunload","onvolumechange","onwaiting","onwheel"]
+HTML_TAG_REGEX=re.compile(br"<([!/]?[a-zA-Z0-9\-_]+)\s*(.*?)\s*(/?)>",re.I|re.M|re.X)
+JS_KEYWORDS=["break","case","catch","const","const","continue","debugger","default","delete","do","else","enum","false","finally","for","function","if","in","instanceof","let","new","null","of","return","switch","this","throw","true","try","typeof","var","var","void","while","with"]
+JS_OPERATORS=["()=>","_=>","=>","...",">>>=",">>=","<<=","|=","^=","&=","+=","-=","*=","/=","%=",";",",","?",":","||","&&","|","^","&","===","==","=","!==","!=","<<","<=","<",">>>",">>",">=",">","++","--","+","-","*","/","%","!","~",".","[","]","{","}","(",")"]
+JS_REGEX_LIST={"_end":re.compile(br"<\s*/script\s*?>"),"dict":re.compile(br"""{\s*(?:[$a-zA-Z0-9_]+|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)\s*:\s*"""),"dict_elem":re.compile(br""",\s*(?:[$a-zA-Z0-9_]+|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)\s*:\s*"""),"float":re.compile(br"\d+\.\d*(?:[eE][-+]?\d+)?|^\d+(?:\.\d*)?[eE][-+]?\d+|^\.\d+(?:[eE][-+]?\d+)?"),"int":re.compile(br"0[xX][\da-fA-F]+|0[0-7]*|\d+"),"identifier":re.compile(br"\.?[$_a-zA-Z0-9]+(?:\.[$_a-zA-Z0-9]+)*"),"string":re.compile(br"""'(?:[^'\\]|\\.)*'|^"(?:[^"\\]|\\.)*"|^`(?:[^`\\]|\\.)*`"""),"regex":re.compile(br"\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/(?!\/)[igm]{0,3}"),"line_break":re.compile(br"[\n\r]+|/\*(?:.|[\r\n])*?\*/"),"whitespace":re.compile(br"[\ \t]+|//.*?(?:[\r\n]|$)"),"operator":re.compile(bytes("|".join([re.sub(r"([\?\|\^\&\(\)\{\}\[\]\+\-\*\/\.])",r"\\\1",e) for e in JS_OPERATORS]),"utf-8"))}
+JS_RESERVED_IDENTIFIERS=JS_KEYWORDS+["AggregateError","alert","arguments","Array","ArrayBuffer","AsyncFunction","AsyncGenerator","AsyncGeneratorFunction","atob","Atomics","BigInt","BigInt64Array","BigUint64Array","blur","Boolean","btoa","caches","cancelAnimationFrame","cancelIdleCallback","captureEvents","chrome","clearInterval","clearTimeout","clientInformation","close","closed","confirm","console","cookieStore","createImageBitmap","crossOriginIsolated","crypto","customElements","DataView","Date","decodeURI","decodeURIComponent","defaultStatus","defaultstatus","devicePixelRatio","document","encodeURI","encodeURIComponent","Error","escape","eval","EvalError","external","fetch","find","Float32Array","Float64Array","focus","frameElement","frames","Function","Generator","GeneratorFunction","getComputedStyle","getSelection","globalThis","history","Image","indexedDB","Infinity","innerHeight","innerWidth","Int16Array","Int32Array","Int8Array","InternalError","Intl","isFinite","isNaN","isSecureContext","JSON","length","localStorage","location","locationbar","Map","matchMedia","Math","menubar","moveBy","moveTo","NaN","navigator","Number","Object","open","openDatabase","opener","origin","originIsolated","outerHeight","outerWidth","pageXOffset","pageYOffset","parent","parseFloat","parseInt","performance","personalbar","postMessage","print","Promise","prompt","Proxy","queueMicrotask","RangeError","ReferenceError","Reflect","RegExp","releaseEvents","requestAnimationFrame","requestIdleCallback","resizeBy","resizeTo","screen","screenLeft","screenTop","screenX","screenY","scroll","scrollbars","scrollBy","scrollTo","scrollX","scrollY","self","sessionStorage","Set","setInterval","setTimeout","SharedArrayBuffer","showDirectoryPicker","showOpenFilePicker","showSaveFilePicker","speechSynthesis","status","statusbar","stop","String","styleMedia","Symbol","SyntaxError","toolbar","top","trustedTypes","TypeError","Uint16Array","Uint32Array","Uint8Array","Uint8ClampedArray","undefined","unescape","uneval","URIError","visualViewport","WeakMap","WeakSet","WebAssembly","webkitCancelAnimationFrame","webkitRequestAnimationFrame","webkitRequestFileSystem","webkitResolveLocalFileSystemURL","WebSocket","window"]
 PYTHON_TOKEN_REGEX={"ignore":re.compile(br"\s*(?:\\\r?\n\s*)*(?:#[^\r\n]*)?"),"keyword":re.compile(br"(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b"),"identifier":re.compile(br"[a-zA-Z_][a-zA-Z_0-9]*(\s*\.\s*[a-zA-Z_][a-zA-Z_0-9]*)*"),"operator":re.compile(br"\~|\}|\|=|\||\{|\^=|\^|\]|\[|@=|@|>>=|>>|>=|>|==|=|<=|<<=|<<|<|;|:=|:|/=|//=|//|/|\.\.\.|\.|\->|\-=|\-|,|\+=|\+|\*=|\*\*=|\*\*|\*|\)|\(|\&=|\&|%=|%|!="),"integer":re.compile(br"(0[xX](?:_?[0-9a-fA-F])+|0[bB](?:_?[01])+|0[oO](?:_?[0-7])+|(?:0(?:_?0)*|[1-9](?:_?[0-9])*))"),"float":re.compile(br"(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)"),"complex":re.compile(br"([0-9](?:_?[0-9])*[jJ]|(([0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)([eE][-+]?[0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*[eE][-+]?[0-9](?:_?[0-9])*)[jJ])"),"string":re.compile(br"""(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'''[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)\"\"\"[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*\"\"\"|((|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)'[^\n'\\]*(?:\\.[^\n'\\]*)*('|\\\r?\n)|(|rf|BR|rb|RF|Fr|RB|B|Rf|R|r|F|u|Br|Rb|fR|rB|f|U|rF|fr|b|FR|bR|br)"[^\n"\\]*(?:\\.[^\n"\\]*)*("|\\\r?\n))"""),"bracket":re.compile(br"\(|\[|\{|\)|\]|\}")}
+TYPE_CLASS=3
 TYPE_DIR=0
 TYPE_FILE=1
 TYPE_FUNCTION=2
-TYPE_CLASS=3
 
 
 
@@ -121,22 +128,20 @@ def _match_gitignore_path(gdt,fp):
 
 
 
-def _parse_python(fp,o):
+def _parse_python(fp,dt,o):
 	tl=[]
-	with open(fp,"rb") as f:
-		dt=f.read()
-		i=0
-		while (i<len(dt)):
-			ok=False
-			for k,v in PYTHON_TOKEN_REGEX.items():
-				m=v.match(dt[i:])
-				if (m is not None and m.end(0)!=0):
-					tl.append((k,m.group(0)))
-					ok=True
-					i+=m.end(0)
-					break
-			if (not ok):
-				return []
+	i=0
+	while (i<len(dt)):
+		ok=False
+		for k,v in PYTHON_TOKEN_REGEX.items():
+			m=v.match(dt[i:])
+			if (m is not None and m.end(0)!=0):
+				tl.append((k,m.group(0)))
+				ok=True
+				i+=m.end(0)
+				break
+		if (not ok):
+			return
 	sc=[(0,o)]
 	i=0
 	off=0
@@ -172,8 +177,6 @@ def _parse_python(fp,o):
 			sc.append((len(bf),{"t":t,"v":nm,"c":[],"l":[],"fl":[],"sln":sln,"soff":soff,"eln":0,"sz":0}))
 			sc[-2][1]["c"].append(sc[-1][1])
 		elif (tl[i][0]=="keyword" and tl[i][1] in [b"import",b"from"]):
-			sln=ln
-			soff=off-len(tl[i][1])
 			i+=1
 			while (tl[i][0]=="ignore"):
 				off+=len(tl[i][1])
@@ -211,6 +214,81 @@ def _parse_python(fp,o):
 
 
 
+def _parse_js(fp,dt,o):
+	def _tokenize(s,c_rgx):
+		i=0
+		o=[]
+		b=0
+		while (i<len(s)):
+			e=False
+			for k,v in JS_REGEX_LIST.items():
+				if (k=="regex" and c_rgx==False):
+					continue
+				mo=re.match(v,s[i:])
+				if (mo!=None):
+					m=mo.group(0)
+					if (k=="_end"):
+						return (o,i)
+					elif (k=="line_break"):
+						o+=[("operator",b";")]
+					elif (k=="string" and m[:1]==b"`"):
+						j=0
+						ts=b""
+						f=False
+						while (j<len(m)):
+							if (m[j:j+2]==b"${"):
+								l,tj=_tokenize(m[j+2:],False)
+								j+=tj+2
+								o+=[("string"+("M" if f==True else "S"),(b"`"+ts[1:] if f==False else b"}"+ts)+b"${")]+l
+								ts=b""
+								f=True
+							else:
+								ts+=m[j:j+1]
+							j+=1
+						o+=[("string"+("" if f==False else "E"),(b"}"+ts[:-1]+b"`" if f==True else ts))]
+					elif (k!="whitespace"):
+						if (k=="identifier" and str(m,"utf-8") in JS_KEYWORDS):
+							k="keyword"
+						elif (k=="identifier" and m.count(b".")>0 and m.split(b".")[0]==b"window" and str(m.split(b".")[1],"utf-8") in JS_RESERVED_IDENTIFIERS and str(m.split(b".")[1],"utf-8") not in JS_KEYWORDS):
+							m=m[7:]
+						if (k in ["operator","dict"]):
+							if (m[:1]==b"{"):
+								b+=1
+							elif (m==b"}"):
+								b-=1
+								if (b==-1):
+									return (o,i)
+						o+=[(k,m)]
+					i+=mo.end(0)
+					e=True
+					break
+			if (e==True):
+				continue
+			raise RuntimeError(f"Unable to Match JS Regex: {str(s[i:],'utf-8')}")
+		return (o,i)
+	tl=_tokenize(dt,True)[0]
+
+
+
+def _parse_html(fp,dt,o):
+	i=0
+	while (i<len(dt)):
+		m=HTML_TAG_REGEX.search(dt[i:])
+		if (m is None):
+			break
+		i+=m.end(0)
+		t_nm=m.group(1)
+		pm={}
+		if (len(m.group(2))>0):
+			for k,v in re.findall(HTML_ATTRIBUTE_REGEX,m.group(2)):
+				if (str(k,"utf-8") in HTML_TAG_JS_ATTRIBUTES):
+					raise RuntimeError("Unimplemented")
+				pm[k]=v
+		if (t_nm==b"script" and b"type" in pm and pm[b"type"]==b"text/javascript" and b"src" not in pm and b"async" not in pm and b"defer" not in pm):
+			_parse_js(fp,dt[i:],o)
+
+
+
 def _parse_dir(fp,gdt):
 	fp=fp.replace("\\","/").rstrip("/")+"/"
 	o={"t":TYPE_DIR,"v":fp.split("/")[-2],"c":[],"sz":0}
@@ -243,8 +321,12 @@ def _parse_dir(fp,gdt):
 				if (_match_gitignore_path(gdt[-1],fp+k)==False):
 					e=k[len(k.split(".")[0]):]
 					o["c"].append({"t":TYPE_FILE,"v":k,"c":[],"l":[],"fl":[],"sz":0})
-					if (e==".py"):
-						_parse_python(fp+k,o["c"][-1])
+					with open(fp+k,"rb") as f:
+						dt=f.read()
+						if (e==".py"):
+							_parse_python(fp+k,dt,o["c"][-1])
+						elif (e==".html"):
+							_parse_html(fp+k,dt,o["c"][-1])
 					o["c"][-1]["sz"]=os.stat(fp+k).st_size
 					o["sz"]+=o["c"][-1]["sz"]
 	except PermissionError:
