@@ -1,6 +1,5 @@
 import os
 import re
-import os.path
 
 
 
@@ -97,7 +96,7 @@ def _match_gitignore_path(gdt,fp):
 	fnm=fp.lower().replace("\\","/").lower().split("/")
 	ig=False
 	for p in gdt:
-		if ((ig==False or p[0]==True)):
+		if ((ig is False or p[0] is True)):
 			if (len(fnm)<len(p[1])):
 				continue
 			if (len(p[1][0].pattern)==2):
@@ -106,7 +105,7 @@ def _match_gitignore_path(gdt,fp):
 					if (r.match(sfnm) is None):
 						ok=False
 						break
-				if (ok==False):
+				if (ok is False):
 					continue
 			else:
 				ok=False
@@ -117,12 +116,12 @@ def _match_gitignore_path(gdt,fp):
 					else:
 						ok=True
 						break
-				if (ok==False):
+				if (ok is False):
 					continue
-			if (p[0]==True):
+			if (p[0] is True):
 				return False
 			ig=True
-	if (ig==True):
+	if (ig is True):
 		return True
 	return False
 
@@ -222,7 +221,7 @@ def _parse_js(fp,dt,o):
 		while (i<len(s)):
 			e=False
 			for k,v in JS_REGEX_LIST.items():
-				if (k=="regex" and c_rgx==False):
+				if (k=="regex" and c_rgx is False):
 					continue
 				mo=re.match(v,s[i:])
 				if (mo!=None):
@@ -239,13 +238,14 @@ def _parse_js(fp,dt,o):
 							if (m[j:j+2]==b"${"):
 								l,tj=_tokenize(m[j+2:],False)
 								j+=tj+2
-								o+=[("string"+("M" if f==True else "S"),(b"`"+ts[1:] if f==False else b"}"+ts)+b"${")]+l
+								o.append(("string"+("M" if f is True else "S"),(b"`"+ts[1:] if f is False else b"}"+ts)+b"${"))
+								o.extend(l)
 								ts=b""
 								f=True
 							else:
 								ts+=m[j:j+1]
 							j+=1
-						o+=[("string"+("" if f==False else "E"),(b"}"+ts[:-1]+b"`" if f==True else ts))]
+						o.append(("string"+("" if f is False else "E"),(b"}"+ts[:-1]+b"`" if f is True else ts)))
 					elif (k!="whitespace"):
 						if (k=="identifier" and str(m,"utf-8") in JS_KEYWORDS):
 							k="keyword"
@@ -258,11 +258,11 @@ def _parse_js(fp,dt,o):
 								b-=1
 								if (b==-1):
 									return (o,i)
-						o+=[(k,m)]
+						o+.append((k,m))
 					i+=mo.end(0)
 					e=True
 					break
-			if (e==True):
+			if (e is True):
 				continue
 			raise RuntimeError(f"Unable to Match JS Regex: {str(s[i:],'utf-8')}")
 		return (o,i)
@@ -314,11 +314,11 @@ def _parse_dir(fp,gdt):
 	try:
 		for k in os.listdir(fp):
 			if (os.path.isdir(fp+k) and (k!="docs" or len(gdt)<2)):
-				if (_match_gitignore_path(gdt[-1],fp+k)==False):
+				if (_match_gitignore_path(gdt[-1],fp+k) is False):
 					o["c"].append(_parse_dir(fp+k,gdt))
 					o["sz"]+=o["c"][-1]["sz"]
 			else:
-				if (_match_gitignore_path(gdt[-1],fp+k)==False):
+				if (_match_gitignore_path(gdt[-1],fp+k) is False):
 					e=k[len(k.split(".")[0]):]
 					o["c"].append({"t":TYPE_FILE,"v":k,"c":[],"l":[],"fl":[],"sz":0})
 					with open(fp+k,"rb") as f:
