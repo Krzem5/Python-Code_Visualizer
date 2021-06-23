@@ -258,7 +258,7 @@ def _parse_js(fp,dt,o):
 								b-=1
 								if (b==-1):
 									return (o,i)
-						o+.append((k,m))
+						o.append((k,m))
 					i+=mo.end(0)
 					e=True
 					break
